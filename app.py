@@ -43,7 +43,7 @@ has_reports = set(Ei.manager_employee_id.dropna().astype(int))
 lead = Ei[Ei.employee_id.isin(has_reports)].copy()
 order = ["CEO", "VP", "Director", "Manager", "Senior Analyst", "Analyst"]
 lead["o"] = lead.job_level.map({k: i for i, k in enumerate(order)}).fillna(9); lead = lead.sort_values(["o", "name"])
-labels = {"Whole company": None}; labels.update({f"{r['name']} — {r.job_level}, {r.dept_name}": int(r.employee_id) for _, r in lead.iterrows()})
+labels = {"Company Overview": None}; labels.update({f"{r['name']} — {r.job_level}, {r.dept_name}": int(r.employee_id) for _, r in lead.iterrows()})
 if "_goto" in st.session_state: st.session_state["org"] = st.session_state.pop("_goto")
 with st.sidebar:
     org_label = st.selectbox("Leader's organisation", list(labels), key="org", help="Type a name to search.")
@@ -54,7 +54,7 @@ with st.sidebar:
     st.caption("Synthetic data for the case study.")
 WT = {"FTEs": "FTE", "Contractors": "Contractor", "Interns": "Intern", "All": "All"}[wt_label]; wtn = {"FTE": "FTEs", "Contractor": "contractors", "Intern": "interns", "All": "all workers"}[WT]
 leader = labels[org_label]; asof = pd.Timestamp(asof)
-name = "Whole company" if leader is None else Ei[Ei.employee_id == leader].iloc[0]["name"]
+name = "Company Overview" if leader is None else Ei[Ei.employee_id == leader].iloc[0]["name"]
 L = pe.select(E, leader, incl, WT); CO = pe.select(E, None, True, WT)
 M = pe.monthly(L, asof); Q = pe.quarterly(M); R = pe.rolling12(M)
 Q = Q.iloc[1:] if len(Q) and Q.iloc[0].partial else Q          # drop the one-month Q3 2024
@@ -63,7 +63,7 @@ T = pe.tcc(L, comp2, asof); hc_now = len(T); yr0 = pd.Timestamp(year=(asof - pd.
 hc_y0 = pe.hc_at(L, yr0 - pd.Timedelta(days=1)); ytd = hc_now - hc_y0; avg_hc = M.avg.iloc[-1] if len(M) else 0
 r_now = R.iloc[-1] if len(R) else None; r_then = R.iloc[0] if len(R) else None; rc_now = RC.iloc[-1] if len(RC) else None
 
-st.title(f"{name}’s org" if leader else "Whole company")
+st.title(f"{name}’s org" if leader else "Company Overview")
 tot_now = len(pe.select(E, leader, incl, 'All').pipe(lambda x: x[(x.hire_date<=asof)&(x.termination_date.isna()|(x.termination_date>asof))]))
 st.caption(f"{'' if leader else 'Select a leader in the sidebar to explore their organisation. '}As of {asof:%B %d, %Y}: " + (f"{hc_now:,} FTEs{' (the case population)' if leader is None else ''} · {tot_now:,} total workers including contractors and interns" if WT == "FTE" else (f"{tot_now:,} total workers including contractors and interns" if WT == "All" else f"showing {hc_now:,} {wtn} · {tot_now:,} total workers including contractors and interns")))
 if WT != "FTE": st.warning(f"You are viewing {wtn}. The case questions are about FTEs. Interns’ “End of Internship” exits are coded voluntary, so attrition here overstates real resignations.")
