@@ -167,10 +167,10 @@ let charts = {};
 const nameKey = e => e.name + " — " + e.level + ", " + e.dept;
 const leaderByLabel = new Map();
 E.leaders.forEach(e => { const k = nameKey(e); leaderByLabel.set(k, e.id); });
-$("#orgList").innerHTML = '<option value="Whole company">' + E.leaders.map(e => '<option value="' + esc(nameKey(e)) + '">').join("");
-$("#quick").innerHTML = '<button class="chip" data-id="">Whole company</button>' + E.children(E.ceo.id).map(e => '<button class="chip" data-id="' + e.id + '">' + esc(e.name) + '</button>').join("");
+$("#orgList").innerHTML = '<option value="Company Overview">' + E.leaders.map(e => '<option value="' + esc(nameKey(e)) + '">').join("");
+$("#quick").innerHTML = '<button class="chip" data-id="">Company Overview</button>' + E.children(E.ceo.id).map(e => '<button class="chip" data-id="' + e.id + '">' + esc(e.name) + '</button>').join("");
 $("#quick").onclick = ev => { const b = ev.target.closest("button"); if (b) setLeader(b.dataset.id ? +b.dataset.id : null); };
-$("#orgIn").addEventListener("change", ev => { const v = ev.target.value.trim(); if (!v || v === "Whole company") return setLeader(null);
+$("#orgIn").addEventListener("change", ev => { const v = ev.target.value.trim(); if (!v || v === "Company Overview") return setLeader(null);
   if (leaderByLabel.has(v)) return setLeader(leaderByLabel.get(v));
   const hit = E.leaders.filter(e => e.name.toLowerCase() === v.toLowerCase()); if (hit.length) return setLeader(hit[0].id);
   const part = E.leaders.filter(e => e.name.toLowerCase().includes(v.toLowerCase())); if (part.length === 1) return setLeader(part[0].id);
@@ -180,12 +180,12 @@ $("#wtSeg").onclick = ev => { const b = ev.target.closest("button"); if (!b) ret
 // as-of options: first of each month from Jan 2025 to payload as-of
 (function(){ let o = ""; for (let d = E.ASOF; d >= E.dn(2025,1,1); d = E.addMonths(d,-1)) o += '<option value="' + d + '">' + nice(d) + (d === E.ASOF ? " (latest)" : "") + '</option>'; $("#asofSel").innerHTML = o; })();
 $("#asofSel").onchange = ev => { S.asof = +ev.target.value; render(); };
-const NAV = [["overview","Overview","The headline numbers for this org"],["headcount","Headcount & growth","How many people, and are we growing?"],["comp","Pay (TCC)","Annualised total cash comp, FTEs"],["attr","Attrition by quarter","Voluntary attrition, last two years"],["early","First-year attrition","Are new hires leaving faster?"],["find","Worth flagging","What else surprised us"],["data","Data & method","Issues found, assumptions, how it's built"]];
+const NAV = [["overview","Overview","The headline numbers for this org"],["headcount","Headcount & growth","How many people, and are we growing?"],["comp","Pay (TCC)","Annualised total cash comp, FTEs"],["attr","Attrition by quarter","Voluntary attrition, last two years"],["early","First-year attrition","Are new hires leaving faster?"],["find","Worth flagging (Sept 2026 data)","What else surprised us"],["data","Data & method","Issues found, assumptions, how it's built"]];
 $("#nav").innerHTML = NAV.map(([k,a,b]) => '<button data-k="' + k + '"><b>' + a + '</b><small>' + b + '</small></button>').join("");
 $("#nav").onclick = ev => { const b = ev.target.closest("button"); if (b) { S.tab = b.dataset.k; render(); window.scrollTo({top:0}); } };
 $("#datastamp").textContent = "Source data through " + nice(E.fromISO(meta.data_through));
 $("#foot").innerHTML = "Synthetic data for the case study.";
-function setLeader(id){ S.leader = id; const e = id ? E.byId.get(id) : null; $("#orgIn").value = e ? nameKey(e) : "Whole company"; render(); }
+function setLeader(id){ S.leader = id; const e = id ? E.byId.get(id) : null; $("#orgIn").value = e ? nameKey(e) : "Company Overview"; render(); }
 
 /* ---------- helpers ---------- */
 const sel = (o={}) => E.select(Object.assign({leader:S.leader, includeLeader:S.incl, wt:S.wt}, o));
@@ -199,7 +199,7 @@ function chart(id, cfg){
   cfg.options.scales = cfg.options.scales || {}; Object.values(cfg.options.scales).forEach(s => { s.grid = Object.assign({color:c.line}, s.grid||{}); });
   charts[id] = new Chart(document.getElementById(id), cfg); return charts[id];
 }
-const orgName = () => S.leader ? E.byId.get(S.leader).name : "Whole company";
+const orgName = () => S.leader ? E.byId.get(S.leader).name : "Company Overview";
 const tag = () => S.leader ? orgName() + "'s org" : "the whole company";
 function altLine(kind){   // shows the other reading of "org" (with/without the leader) so nobody has to guess
   if (!S.leader) return "";
@@ -420,10 +420,10 @@ function render(){
   kill();
   const C = computeCore();
   const e = S.leader ? E.byId.get(S.leader) : null;
-  $("#title").textContent = e ? e.name + "’s org" : "Whole company";
-  $("#lede").textContent = (S.leader ? "" : "Select a leader in the sidebar to explore their organisation. ") + (e ? e.level + ", " + e.dept + " · " : "") + fmt(E.hcAt(sel({wt:"A"}), S.asof)) + " people in total on " + nice(S.asof) + " (" + fmt(C.hcNow) + " " + WT[S.wt] + " shown).";
+  $("#title").textContent = e ? e.name + "’s org" : "Company Overview";
+  $("#lede").textContent = (S.leader ? "" : "Select a leader in the sidebar to explore their organisation. ") + (e ? e.level + ", " + e.dept + " · " : "") + "As of " + nice(S.asof) + ": " + fmt(C.hcNow) + " " + WT[S.wt] + (S.wt === "F" && !S.leader ? " (the case population)" : "") + " · " + fmt(E.hcAt(sel({wt:"A"}), S.asof)) + " total workers including contractors and interns.";
   const ch = S.leader ? E.chain(S.leader) : [];
-  $("#crumbs").innerHTML = ch.length ? '<button data-id="">Whole company</button>' + ch.slice(0,-1).map(x => ' › <button data-id="' + x.id + '">' + esc(x.name) + '</button>').join("") + ' › <span>' + esc(ch[ch.length-1].name) + '</span>' : "";
+  $("#crumbs").innerHTML = ch.length ? '<button data-id="">Company Overview</button>' + ch.slice(0,-1).map(x => ' › <button data-id="' + x.id + '">' + esc(x.name) + '</button>').join("") + ' › <span>' + esc(ch[ch.length-1].name) + '</span>' : "";
   $("#crumbs").querySelectorAll("button").forEach(b => b.onclick = () => setLeader(b.dataset.id ? +b.dataset.id : null));
   $("#warn").innerHTML = S.wt !== "F" ? '<div class="warnbox">You are viewing ' + WT[S.wt] + '. The questions this page answers are about FTEs — switch back to “FTEs” for those figures. Interns’ “End of Internship” exits are coded voluntary, so attrition here overstates real resignations.</div>' : "";
   [...$("#nav").children].forEach(b => b.setAttribute("aria-current", b.dataset.k === S.tab ? "page" : "false"));

@@ -326,7 +326,7 @@ $("#wtSeg").onclick = ev => { const b = ev.target.closest("button"); if (!b) ret
 // as-of options: first of each month from Jan 2025 to payload as-of
 (function(){ let o = ""; for (let d = E.ASOF; d >= E.dn(2025,1,1); d = E.addMonths(d,-1)) o += '<option value="' + d + '">' + nice(d) + (d === E.ASOF ? " (latest)" : "") + '</option>'; $("#asofSel").innerHTML = o; })();
 $("#asofSel").onchange = ev => { S.asof = +ev.target.value; render(); };
-const NAV = [["overview","Overview","The headline numbers for this org"],["headcount","Headcount & growth","How many people, and are we growing?"],["comp","Pay (TCC)","Annualised total cash comp, FTEs"],["attr","Attrition by quarter","Voluntary attrition, last two years"],["early","First-year attrition","Are new hires leaving faster?"],["find","Worth flagging","What else surprised us"],["data","Data & method","Issues found, assumptions, how it's built"]];
+const NAV = [["overview","Overview","The headline numbers for this org"],["headcount","Headcount & growth","How many people, and are we growing?"],["comp","Pay (TCC)","Annualised total cash comp, FTEs"],["attr","Attrition by quarter","Voluntary attrition, last two years"],["early","First-year attrition","Are new hires leaving faster?"],["find","Worth flagging (Sept 2026 data)","What else surprised us"],["data","Data & method","Issues found, assumptions, how it's built"]];
 $("#nav").innerHTML = NAV.map(([k,a,b]) => '<button data-k="' + k + '"><b>' + a + '</b><small>' + b + '</small></button>').join("");
 $("#nav").onclick = ev => { const b = ev.target.closest("button"); if (b) { S.tab = b.dataset.k; render(); window.scrollTo({top:0}); } };
 $("#datastamp").textContent = "Source data through " + nice(E.fromISO(meta.data_through));

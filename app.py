@@ -89,7 +89,7 @@ def sub_table(key):
         if st.button(f"Open {row.Leader}’s org", key=f"open_{key}"): st.session_state["_goto"] = lbl; st.rerun()
     if co is not None: st.caption(f"Company first-year rate for comparison: {pct(co.lt1_rate)}. Look for orgs running at 1.5× or more.")
 
-tabs = st.tabs(["Overview", "Headcount & growth", "Pay (TCC)", "Attrition by quarter", "First-year attrition", "Worth flagging", "Data & method"])
+tabs = st.tabs(["Overview", "Headcount & growth", "Pay (TCC)", "Attrition by quarter", "First-year attrition", "Worth flagging (Sept 2026 data)", "Data & method"])
 
 # ---------------- Overview ----------------
 with tabs[0]:
@@ -202,6 +202,7 @@ with tabs[4]:
 
 # ---------------- Findings ----------------
 with tabs[5]:
+    if up is not None: st.warning("The commentary below was written for the September 2026 case data. The figures in it recalculate from the file you uploaded, but the conclusions (for example \u201cattrition has climbed steadily\u201d) may no longer hold. Re-read them against the current numbers before relying on them.")
     F = CO if WT == "FTE" else pe.select(E, None, True, "FTE"); MF = pe.monthly(F, asof); QF = pe.quarterly(MF); QF = QF.iloc[1:] if QF.iloc[0].partial else QF; RF = pe.rolling12(MF); rF = RF.iloc[-1]
     st.caption(f"Company-wide, FTEs only, as of {asof:%B %d, %Y}. Numbers are computed from the same data as every other tab.")
     Ei_ = Ei; top = None; rows = []
