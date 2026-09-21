@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>People Intelligence Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#16202B; --ink2:#4A5866; --mute:#7B8794; --paper:#EEF1F4; --card:#FFFFFF; --line:#D9DFE6; --line2:#EBEEF2;
+  --teal:#0E5C73; --teal-soft:#DCEDF2; --amber:#C77D00; --amber-soft:#FBEFD5; --brick:#B23A2E; --brick-soft:#F8E1DD; --slate:#8592A0; --good:#2F7D4F;
+  --font-head:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif; --font-body:"Public Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--ink:#E8EDF2;--ink2:#B4BFCA;--mute:#8A97A4;--paper:#10161C;--card:#18212A;--line:#2B3743;--line2:#222D37;--teal:#5BB8D0;--teal-soft:#173441;--amber:#E8A93A;--amber-soft:#3A2D12;--brick:#E5776B;--brick-soft:#3C1F1C;--slate:#8592A0;--good:#6BC48F}
+}
+:root[data-theme="dark"]{--ink:#E8EDF2;--ink2:#B4BFCA;--mute:#8A97A4;--paper:#10161C;--card:#18212A;--line:#2B3743;--line2:#222D37;--teal:#5BB8D0;--teal-soft:#173441;--amber:#E8A93A;--amber-soft:#3A2D12;--brick:#E5776B;--brick-soft:#3C1F1C;--slate:#8592A0;--good:#6BC48F}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--paper);color:var(--ink);font:400 14.5px/1.5 var(--font-body);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100%}
+/* sidebar */
+aside{background:var(--card);border-right:1px solid var(--line);padding:22px 20px;position:sticky;top:env(safe-area-inset-top,0px);align-self:start;height:100vh;height:100dvh;overflow:auto}
+.brand{font:700 20px/1.15 var(--font-head);letter-spacing:-.01em;margin:0 0 2px}
+.brand-sub{color:var(--mute);font-size:12.5px;margin:0 0 20px}
+label.f{display:block;font-weight:600;font-size:12.5px;color:var(--ink2);margin:14px 0 5px}
+.in{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.in:focus-visible,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--card);padding:7px 4px;cursor:pointer;font-size:13px;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--teal);color:#fff;font-weight:600}
+.chk{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:var(--ink2);cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+nav{margin-top:22px;border-top:1px solid var(--line);padding-top:12px}
+nav button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--ink2);line-height:1.3}
+nav button b{display:block;color:var(--ink);font-weight:600}
+nav button small{color:var(--mute);font-size:12px}
+nav button[aria-current="page"]{background:var(--teal-soft)}
+nav button[aria-current="page"] b{color:var(--teal)}
+.foot{margin-top:18px;color:var(--mute);font-size:12px}
+/* main */
+main{padding:26px 34px 60px;max-width:1240px;width:100%}
+.crumbs{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:13px;color:var(--mute);margin-bottom:4px}
+.crumbs button{border:0;background:none;color:var(--teal);cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
+h1{font:700 30px/1.1 var(--font-head);letter-spacing:-.02em;margin:0 0 4px}
+.lede{color:var(--ink2);margin:0 0 20px;max-width:75ch}
+h2{font:700 20px/1.2 var(--font-head);letter-spacing:-.01em;margin:0 0 4px}
+h3{font:600 14px/1.3 var(--font-body);margin:0 0 8px;color:var(--ink2)}
+.panel[hidden]{display:none}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.kpi .v{font:700 34px/1.05 var(--font-head);letter-spacing:-.02em}
+.kpi .l{color:var(--ink2);font-weight:600;font-size:13px;margin-bottom:6px}
+.kpi .s{color:var(--mute);font-size:12.5px;margin-top:6px}
+.up{color:var(--good)} .down{color:var(--brick)} .warn{color:var(--amber)}
+.answer{border-left:4px solid var(--teal);background:var(--teal-soft);border-radius:0 12px 12px 0;padding:14px 18px;margin:0 0 16px}
+.answer.bad{border-color:var(--brick);background:var(--brick-soft)}
+.answer.mid{border-color:var(--amber);background:var(--amber-soft)}
+.answer p{margin:0} .answer .big{font:700 22px/1.25 var(--font-head);letter-spacing:-.01em;margin-bottom:4px}
+.note{font-size:12.5px;color:var(--mute);margin-top:8px}
+.warnbox{background:var(--amber-soft);border:1px solid var(--amber);border-radius:10px;padding:8px 12px;font-size:13px;margin:0 0 12px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-weight:600;color:var(--ink2);border-bottom:1px solid var(--line);padding:7px 8px;white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--line2);vertical-align:top}
+th.n,td.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--teal-soft)}
+.tw{overflow-x:auto}
+.chartbox{position:relative;height:300px}
+.chartbox.tall{height:340px}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600}
+.pill.High{background:var(--brick-soft);color:var(--brick)} .pill.Med{background:var(--amber-soft);color:var(--amber)} .pill.Low,.pill.Info{background:var(--line2);color:var(--ink2)}
+details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--card);margin-bottom:10px}
+summary{cursor:pointer;font-weight:600}
+.find{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line2)}
+.find:last-child{border-bottom:0}
+.find .tag{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font:700 15px var(--font-head)}
+.find .tag.a{background:var(--brick-soft);color:var(--brick)} .find .tag.b{background:var(--amber-soft);color:var(--amber)} .find .tag.c{background:var(--teal-soft);color:var(--teal)}
+.find h3{color:var(--ink);font-size:15px;margin:0 0 3px}
+.find p{margin:0;color:var(--ink2)}
+.btn{border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:600}
+.btn.ghost{background:transparent;color:var(--teal)}
+ol.reco{margin:6px 0 0;padding-left:20px} ol.reco li{margin:6px 0}
+@media (max-width:980px){
+  .app{grid-template-columns:1fr} aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  nav{display:grid;grid-template-columns:1fr 1fr;gap:4px} main{padding:20px 16px 50px}
+  .g4{grid-template-columns:repeat(2,minmax(0,1fr))} .g2{grid-template-columns:1fr}
+}
+@media (max-width:520px){ .g4{grid-template-columns:1fr} h1{font-size:25px} nav{grid-template-columns:1fr} }
+@media print{aside{display:none} .app{display:block} .panel[hidden]{display:block} main{padding:0}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <p class="brand">People Intelligence Explorer</p>
+    <p class="brand-sub" id="datastamp"></p>
+
+    <label class="f" for="orgIn">Leader's organisation</label>
+    <input class="in" id="orgIn" list="orgList" placeholder="Type a leader's name…" autocomplete="off" aria-describedby="orgHelp">
+    <datalist id="orgList"></datalist>
+    <div class="chips" id="quick"></div>
+    <label class="chk"><input type="checkbox" id="inclLeader" checked> Count the leader in their own org</label>
+
+    <label class="f">Workers</label>
+    <div class="seg" id="wtSeg" role="group" aria-label="Worker type">
+      <button data-v="F" aria-pressed="true">FTEs</button><button data-v="C" aria-pressed="false">Contract</button><button data-v="I" aria-pressed="false">Interns</button><button data-v="A" aria-pressed="false">All</button>
+    </div>
+    <label class="f" for="asofSel">Data as of</label>
+    <select class="in" id="asofSel"></select>
+
+    <nav id="nav" aria-label="Sections"></nav>
+    <p class="foot" id="foot"></p>
+  </aside>
+
+  <main id="main">
+    <div class="crumbs" id="crumbs"></div>
+    <h1 id="title"></h1>
+    <p class="lede" id="lede"></p>
+    <div id="warn"></div>
+
+    <section class="panel" id="p-overview"></section>
+    <section class="panel" id="p-headcount" hidden></section>
+    <section class="panel" id="p-comp" hidden></section>
+    <section class="panel" id="p-attr" hidden></section>
+    <section class="panel" id="p-early" hidden></section>
+    <section class="panel" id="p-find" hidden></section>
+    <section class="panel" id="p-data" hidden></section>
+  </main>
+</div>
+
+<script>
+/*__ENGINE__*/
+</script>
+<script>
+const PAYLOAD = /*__PAYLOAD__*/;
+</script>
+<script>
+(function(){
+"use strict";
+const E = PIEngine(PAYLOAD), meta = E.meta;
+const $ = s => document.querySelector(s);
+const fmt = n => n == null ? "–" : Math.round(n).toLocaleString("en-US");
+const usd = n => n == null ? "–" : "$" + Math.round(n).toLocaleString("en-US");
+const usdM = n => n == null ? "–" : "$" + (n/1e6).toFixed(2) + "M";
+const pct = (x, d=1) => x == null ? "–" : (x*100).toFixed(d) + "%";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const nice = n => { const t = E.toDate(n); return MONTHS[t.getUTCMonth()] + " " + t.getUTCDate() + ", " + t.getUTCFullYear(); };
+const mlabel = s => { const [y,m] = s.split("-"); return MONTHS[+m-1] + " '" + y.slice(2); };
+const WT = {F:"FTEs", C:"contractors", I:"interns", A:"all workers"};
+
+const S = { leader: null, incl: true, wt: "F", asof: E.ASOF, tab: "overview" };   // leader null = whole company
+let charts = {};
+
+/* ---------- sidebar wiring ---------- */
+const nameKey = e => e.name + " — " + e.level + ", " + e.dept;
+const leaderByLabel = new Map();
+E.leaders.forEach(e => { const k = nameKey(e); leaderByLabel.set(k, e.id); });
+$("#orgList").innerHTML = '<option value="Whole company">' + E.leaders.map(e => '<option value="' + esc(nameKey(e)) + '">').join("");
+$("#quick").innerHTML = '<button class="chip" data-id="">Whole company</button>' + E.children(E.ceo.id).map(e => '<button class="chip" data-id="' + e.id + '">' + esc(e.name) + '</button>').join("");
+$("#quick").onclick = ev => { const b = ev.target.closest("button"); if (b) setLeader(b.dataset.id ? +b.dataset.id : null); };
+$("#orgIn").addEventListener("change", ev => { const v = ev.target.value.trim(); if (!v || v === "Whole company") return setLeader(null);
+  if (leaderByLabel.has(v)) return setLeader(leaderByLabel.get(v));
+  const hit = E.leaders.filter(e => e.name.toLowerCase() === v.toLowerCase()); if (hit.length) return setLeader(hit[0].id);
+  const part = E.leaders.filter(e => e.name.toLowerCase().includes(v.toLowerCase())); if (part.length === 1) return setLeader(part[0].id);
+  ev.target.setCustomValidity("No leader found"); ev.target.reportValidity(); ev.target.setCustomValidity(""); });
+$("#inclLeader").onchange = ev => { S.incl = ev.target.checked; render(); };
+$("#wtSeg").onclick = ev => { const b = ev.target.closest("button"); if (!b) return; S.wt = b.dataset.v; [...$("#wtSeg").children].forEach(x => x.setAttribute("aria-pressed", x === b)); render(); };
+// as-of options: first of each month from Jan 2025 to payload as-of
+(function(){ let o = ""; for (let d = E.ASOF; d >= E.dn(2025,1,1); d = E.addMonths(d,-1)) o += '<option value="' + d + '">' + nice(d) + (d === E.ASOF ? " (latest)" : "") + '</option>'; $("#asofSel").innerHTML = o; })();
+$("#asofSel").onchange = ev => { S.asof = +ev.target.value; render(); };
+const NAV = [["overview","Overview","The headline numbers for this org"],["headcount","Headcount & growth","How many people, and are we growing?"],["comp","Pay (TCC)","Annualised total cash comp, FTEs"],["attr","Attrition by quarter","Voluntary attrition, last two years"],["early","First-year attrition","Are new hires leaving faster?"],["find","Worth flagging","What else surprised us"],["data","Data & method","Issues found, assumptions, how it's built"]];
+$("#nav").innerHTML = NAV.map(([k,a,b]) => '<button data-k="' + k + '"><b>' + a + '</b><small>' + b + '</small></button>').join("");
+$("#nav").onclick = ev => { const b = ev.target.closest("button"); if (b) { S.tab = b.dataset.k; render(); window.scrollTo({top:0}); } };
+$("#datastamp").textContent = "Source data through " + nice(E.fromISO(meta.data_through));
+$("#foot").innerHTML = "Synthetic data for the case study.";
+function setLeader(id){ S.leader = id; const e = id ? E.byId.get(id) : null; $("#orgIn").value = e ? nameKey(e) : "Whole company"; render(); }
+
+/* ---------- helpers ---------- */
+const sel = (o={}) => E.select(Object.assign({leader:S.leader, includeLeader:S.incl, wt:S.wt}, o));
+const company = () => E.select({leader:null, wt:S.wt});
+function kill(){ Object.values(charts).forEach(c => c.destroy()); charts = {}; }
+function themeColors(){ const cs = getComputedStyle(document.documentElement); const g = n => cs.getPropertyValue(n).trim();
+  return { ink:g("--ink"), mute:g("--mute"), line:g("--line2"), teal:g("--teal"), amber:g("--amber"), brick:g("--brick"), slate:g("--slate"), card:g("--card") }; }
+function chart(id, cfg){
+  const c = themeColors(); Chart.defaults.font.family = getComputedStyle(document.body).fontFamily; Chart.defaults.color = c.mute; Chart.defaults.animation = false;
+  cfg.options = Object.assign({responsive:true, maintainAspectRatio:false, interaction:{mode:"index", intersect:false}}, cfg.options||{});
+  cfg.options.scales = cfg.options.scales || {}; Object.values(cfg.options.scales).forEach(s => { s.grid = Object.assign({color:c.line}, s.grid||{}); });
+  charts[id] = new Chart(document.getElementById(id), cfg); return charts[id];
+}
+const orgName = () => S.leader ? E.byId.get(S.leader).name : "Whole company";
+const tag = () => S.leader ? orgName() + "'s org" : "the whole company";
+function altLine(kind){   // shows the other reading of "org" (with/without the leader) so nobody has to guess
+  if (!S.leader) return "";
+  const alt = sel({includeLeader: !S.incl}), t = E.tccOf(alt, S.asof), n = E.hcAt(alt, S.asof), nm = E.byId.get(S.leader).name;
+  const leaderActive = E.activeAt(E.byId.get(S.leader), S.asof) && (S.wt === "A" || E.byId.get(S.leader).wt === S.wt);
+  if (!leaderActive) return "";
+  return ' <span class="note" style="display:block;margin-top:4px">' + (S.incl ? "Without " : "Including ") + esc(nm) + " themselves: " + (kind === "tcc" ? usd(t.tcc) + " (" + fmt(t.n) + " people)" : fmt(n) + " people") + ".</span>";
+}
+function smallWarn(avg){ return avg < 40 ? '<div class="warnbox">Small population (about ' + Math.round(avg) + ' people on average). One or two exits move these rates a lot — read the counts, not just the percentages.</div>' : ""; }
+function tbl(head, rows, cls=""){ return '<div class="tw"><table class="' + cls + '"><thead><tr>' + head.map((h,i) => '<th class="' + (i ? "n" : "") + '">' + h + '</th>').join("") + '</tr></thead><tbody>' + rows.join("") + '</tbody></table></div>'; }
+function subOrgTable(showAttr){
+  const start = S.leader == null ? E.ceo.id : S.leader; const rows = E.subOrgRows(start, S.wt, S.asof);
+  if (!rows.length) return '<p class="note">This leader has no sub-leaders under them, so there is nothing further to drill into. See the level breakdown on the Pay tab.</p>';
+  const co = E.ttmSummary(company(), S.asof);
+  return '<p class="note" style="margin:0 0 8px">Click a row to open that leader’s org.</p>' + tbl(["Leader","People","Annualised TCC","Voluntary attrition (last 12m)","First-year attrition (last 12m)"], rows.map(r => {
+    const hot = co && r.lt1 != null && r.lt1n >= 5 && r.lt1 > co.lt1Rate * 1.5;
+    return '<tr class="click" data-id="' + r.e.id + '"><td><b>' + esc(r.e.name) + '</b><br><span class="note">' + esc(r.e.level) + ' · ' + esc(r.e.dept) + '</span></td><td class="n">' + fmt(r.n) + '</td><td class="n">' + usdM(r.tcc) + '</td><td class="n">' + pct(r.vol) + '</td><td class="n ' + (hot ? "down" : "") + '">' + pct(r.lt1) + ' <span class="note">(' + r.lt1n + ' exits)</span></td></tr>'; }));
+}
+function bindDrill(root){ root.querySelectorAll("tr.click").forEach(tr => tr.onclick = () => setLeader(+tr.dataset.id)); }
+function csvRoster(){
+  const L = sel(); const rows = [["employee_id","name","job_level","department","legal_entity","worker_type","hire_date","termination_date","status_at_asof"]];
+  L.forEach(e => rows.push([e.id, e.name, e.level, e.dept, e.entity, {F:"FTE",C:"Contractor",I:"Intern"}[e.wt], E.iso(e.hire), e.term ? E.iso(e.term) : "", E.activeAt(e, S.asof) ? "Active" : "Not active"]));
+  const t = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(",")).join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([t], {type:"text/csv"})); a.download = "roster_" + orgName().replace(/\s+/g,"_") + "_" + E.iso(S.asof) + ".csv"; a.click();
+}
+
+/* ---------- panels ---------- */
+function computeCore(){
+  const L = sel(), asof = S.asof;
+  const M = E.monthly(L, asof), Q = E.quarterly(M), R12 = E.rolling12(M);
+  const yearStart = E.dn(E.toDate(asof - 1).getUTCFullYear(), 1, 1);
+  const hcNow = E.hcAt(L, asof), hcY0 = E.hcAt(L, yearStart - 1);
+  return { L, M, Q, R12, hcNow, hcY0, tcc: E.tccOf(L, asof), yearStart, avg: M.length ? M[M.length-1].avg : 0 };
+}
+
+function pOverview(C){
+  const r = C.R12.length ? C.R12[C.R12.length-1] : null, ytd = C.hcNow - C.hcY0;
+  const rC = E.ttmSummary(company(), S.asof);
+  const k = (l, v, s) => '<div class="card kpi"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>';
+  $("#p-overview").innerHTML = '<div class="grid g4">' +
+    k("Headcount now", fmt(C.hcNow), '<span class="' + (ytd >= 0 ? "up" : "down") + '">' + (ytd >= 0 ? "▲ " : "▼ ") + Math.abs(ytd) + '</span> since Jan 1 (' + (C.hcY0 ? pct(ytd / C.hcY0) : "–") + ')') +
+    k("Annualised TCC", usdM(C.tcc.tcc), (C.tcc.n ? usd(C.tcc.tcc / C.tcc.n) + " per person" : "–")) +
+    k("Voluntary attrition", r ? pct(r.volRate) : "–", "last 12 months" + (rC && S.leader ? " · company " + pct(rC.volRate) : "")) +
+    k("First-year attrition", r ? pct(r.lt1Rate) : "–", "voluntary, annualised" + (r ? " · everyone else " + pct(r.ge1Rate) : "")) + '</div>' +
+    '<div class="card" style="margin-top:14px"><h2>' + (S.leader ? "Inside " + esc(orgName()) + "’s org" : "Leaders reporting to the CEO") + '</h2>' + subOrgTable() + '</div>' +
+    '<div style="margin-top:12px"><button class="btn ghost" id="dl">Download this org’s roster (CSV, no pay)</button></div>';
+  bindDrill($("#p-overview")); $("#dl").onclick = csvRoster;
+}
+
+function pHeadcount(C){
+  const el = $("#p-headcount"); const yr = E.toDate(S.asof - 1).getUTCFullYear();
+  const ms = C.M.filter(m => m.ms >= C.yearStart);
+  const dec = { label: "Dec " + (yr-1), end: C.hcY0 };
+  const pts = [dec, ...ms.map(m => ({label: MONTHS[E.toDate(m.ms).getUTCMonth()], end: m.end}))];
+  const ytd = C.hcNow - C.hcY0, ytdPct = C.hcY0 ? ytd / C.hcY0 : 0;
+  const first3 = ms.slice(0,3), last3 = ms.slice(-3); const net = a => a.reduce((x,m) => x + m.end - m.start, 0);
+  const lastM = ms[ms.length-1], lastNet = lastM ? lastM.end - lastM.start : 0;
+  const verdict = ytd > 0 ? (last3.length && net(last3) < net(first3) * 0.6 ? "mid" : "") : "bad";
+  const answer = ytd > 0
+    ? 'Headcount grew this year, but the pace slowed. ' + (S.leader ? esc(orgName()) + '’s org' : 'The company') + ' added ' + ytd + ' net ' + WT[S.wt] + ' this year (' + pct(ytdPct) + ')'
+    : (ytd === 0 ? 'Flat this year.' : 'No — ' + (S.leader ? esc(orgName()) + '’s org' : 'the company') + ' is shrinking: ' + Math.abs(ytd) + ' fewer ' + WT[S.wt] + ' than on Jan 1 (' + pct(ytdPct) + ').');
+  const detail = ms.length >= 6 ? 'Net adds in the first three months of the year: ' + net(first3) + '. Last three months: ' + net(last3) + '. ' + (lastM ? 'Last full month (' + mlabel(lastM.label) + '): ' + (lastNet >= 0 ? "+" : "") + lastNet + ' net (' + lastM.hires + ' hires, ' + lastM.exits + ' exits).' : "") : "";
+  const byLvl = E.breakdown(C.L, "level", S.asof).sort((a,b) => meta.levels.indexOf(a.key) - meta.levels.indexOf(b.key));
+  const byDept = E.breakdown(C.L, "dept", S.asof).sort((a,b) => b.n - a.n);
+  el.innerHTML = '<div class="answer ' + verdict + '"><p class="big">' + fmt(C.hcNow) + ' ' + WT[S.wt] + ' on ' + nice(S.asof) + '</p>' + altLine("hc") + '<p style="margin-top:6px">' + answer + (ytd > 0 ? '.' : '') + ' ' + detail + '</p></div>' + smallWarn(C.avg) +
+    '<div class="grid g2"><div class="card"><h3>Headcount at each month-end, this year</h3><div class="chartbox"><canvas id="c-hc" role="img" aria-label="Month-end headcount this year"></canvas></div></div>' +
+    '<div class="card"><h3>Hires vs exits per month</h3><div class="chartbox"><canvas id="c-flow" role="img" aria-label="Hires and exits per month"></canvas></div></div></div>' +
+    '<div class="grid g2" style="margin-top:14px"><div class="card"><h3>By job level</h3>' + tbl(["Level","People"], byLvl.map(r => '<tr><td>' + esc(r.key) + '</td><td class="n">' + r.n + '</td></tr>')) + '</div>' +
+    '<div class="card"><h3>By department</h3>' + tbl(["Department","People"], byDept.map(r => '<tr><td>' + esc(r.key) + '</td><td class="n">' + r.n + '</td></tr>')) + '</div></div>' +
+    '<p class="note">Headcount counts each person once on the date shown: hired on or before it and not terminated on or before it. Includes ' + (S.incl ? "" : "no ") + 'the leader. Duplicates and stale statuses are cleaned first (see Data &amp; method).</p>';
+  const c = themeColors();
+  const lo = Math.min(...pts.map(p => p.end)), hi = Math.max(...pts.map(p => p.end)), pad = Math.max(3, Math.round((hi-lo)*0.4));
+  chart("c-hc", {type:"line", data:{labels:pts.map(p => p.label), datasets:[{label:"Headcount", data:pts.map(p => p.end), borderColor:c.teal, backgroundColor:c.teal, tension:.25, pointRadius:4}]},
+    options:{plugins:{legend:{display:false}}, scales:{y:{min:lo-pad, max:hi+pad, ticks:{precision:0}}}}});
+  chart("c-flow", {type:"bar", data:{labels:ms.map(m => MONTHS[E.toDate(m.ms).getUTCMonth()]), datasets:[{label:"Hires", data:ms.map(m => m.hires), backgroundColor:c.teal},{label:"Exits", data:ms.map(m => -m.exits), backgroundColor:c.brick}]},
+    options:{plugins:{tooltip:{callbacks:{label:i => i.dataset.label + ": " + Math.abs(i.raw)}}}, scales:{x:{stacked:true}, y:{stacked:true, ticks:{callback:v => Math.abs(v)}}}}});
+}
+
+function pComp(C){
+  const t = C.tcc, el = $("#p-comp");
+  const byLvl = E.breakdown(C.L, "level", S.asof).sort((a,b) => meta.levels.indexOf(a.key) - meta.levels.indexOf(b.key));
+  const byEnt = E.breakdown(C.L, "country", S.asof).sort((a,b) => b.tcc - a.tcc);
+  const pending = E.pendingComp(S.asof, C.L);
+  const supp = r => r.n < 5;
+  el.innerHTML = '<div class="answer"><p class="big">' + usd(t.tcc) + ' annualised TCC</p><p>' + fmt(t.n) + ' ' + WT[S.wt] + ' in ' + esc(tag()) + ' on ' + nice(S.asof) + ': base ' + usdM(t.base) + ' + target bonus ' + usdM(t.bonus) + '. Average ' + (t.n ? usd(t.tcc / t.n) : "–") + ' per person, in USD.' + altLine("tcc") + '</p></div>' +
+    (t.missing ? '<div class="warnbox">' + t.missing + ' active ' + WT[S.wt] + ' have no base-pay record and count as $0.</div>' : "") +
+    '<div class="grid g2"><div class="card"><h3>By job level</h3>' + tbl(["Level","People","Avg TCC","Total TCC"], byLvl.map(r => '<tr><td>' + esc(r.key) + '</td><td class="n">' + r.n + '</td><td class="n">' + (supp(r) ? "—" : usd(r.tcc / r.n)) + '</td><td class="n">' + (supp(r) ? "—" : usdM(r.tcc)) + '</td></tr>')) + '<p class="note">Rows with fewer than 5 people are masked to protect individuals.</p></div>' +
+    '<div class="card"><h3>By employing country</h3>' + tbl(["Country","People","Total TCC (USD)"], byEnt.map(r => '<tr><td>' + esc(r.key) + '</td><td class="n">' + r.n + '</td><td class="n">' + (supp(r) ? "—" : usdM(r.tcc)) + '</td></tr>')) + '</div></div>' +
+    '<div class="card" style="margin-top:14px"><h3>How this is calculated</h3><ol class="reco"><li><b>Who:</b> people active on the as-of date, ' + WT[S.wt] + ' only. TCC = base pay + target bonus.</li>' +
+    '<li><b>Which pay record:</b> the latest record effective on or before the as-of date, per component. Future-dated changes are ignored' + (pending.n ? ' — ' + pending.n + ' people have a 4% increase dated ' + nice(E.fromISO(pending.date)) + ', worth about ' + usd(pending.usd) + ' a year once it takes effect.' : ".") + '</li>' +
+    '<li><b>Hourly staff</b> (production associates and leads) are annualised at ' + meta.hours_per_year.toLocaleString() + ' hours a year (40 h × 52 wks). The data has no hours field, so this is an assumption.</li>' +
+    '<li><b>Currency:</b> GBP, EUR and CAD converted at the single rate per currency in the legal-entity table (' + Object.entries(meta.fx).filter(([k,v]) => k !== "USD").map(([k,v]) => k + " " + v).join(", ") + '). If Finance uses a budget rate, the non-US portion will shift.</li>' +
+    '<li><b>Bonus</b> is the annual target amount on file, not payout.</li></ol></div>';
+}
+
+function pAttr(C){
+  const el = $("#p-attr"); const Qc = E.quarterly(E.monthly(company(), S.asof));
+  const Q = C.Q.filter((q,i) => !(i === 0 && q.partial)), last = Q.filter(q => !q.partial).slice(-1)[0], yearAgo = last ? Q.find(q => q.key === last.key - 10) : null;
+  const R = C.R12, rNow = R.length ? R[R.length-1] : null, rThen = R.length ? R[0] : null;
+  let cls = "", head = "", body = "";
+  if (rNow && rThen) {
+    const d = rNow.volRate - rThen.volRate; cls = d > 0.005 ? "bad" : (d < -0.005 ? "" : "mid");
+    head = d > 0.005 ? "Worse." : (d < -0.005 ? "Better." : "About the same.");
+    body = "Voluntary attrition (FTEs, annualised) over the last 12 months is " + pct(rNow.volRate) + ", versus " + pct(rThen.volRate) + " for the 12 months ending " + mlabel(rThen.label) + ". " +
+      (last && yearAgo && yearAgo.volRate != null ? last.label + " ran at " + pct(last.volRate) + " against " + pct(yearAgo.volRate) + " in " + yearAgo.label + "." : "");
+    const cur = Q[Q.length-1]; if (cur && cur.partial) body += " " + cur.label + " so far (" + cur.months + " month" + (cur.months>1?"s":"") + ") is running at " + pct(cur.volRate) + ".";
+  } else { head = "Not enough history"; body = "Need 12 full months of data to show a trailing-12-month rate."; }
+  el.innerHTML = '<div class="answer ' + cls + '"><p class="big">' + head + '</p><p>' + body + '</p></div>' + smallWarn(C.avg) +
+    '<div class="grid g2"><div class="card"><h3>Voluntary attrition by quarter (annualised)</h3><div class="chartbox tall"><canvas id="c-q" role="img" aria-label="Quarterly voluntary attrition"></canvas></div></div>' +
+    '<div class="card"><h3>Trailing 12-month voluntary attrition</h3><div class="chartbox tall"><canvas id="c-t" role="img" aria-label="Rolling 12 month attrition"></canvas></div></div></div>' +
+    '<div class="card" style="margin-top:14px"><h3>Quarter detail</h3>' + tbl(["Quarter","Voluntary exits","Involuntary exits","Avg headcount","Voluntary rate (annualised)"], Q.map(q => '<tr><td>' + q.label + (q.partial ? ' <span class="note">(' + q.months + ' mo, partial)</span>' : '') + '</td><td class="n">' + q.vol + '</td><td class="n">' + q.invol + '</td><td class="n">' + fmt(q.avg) + '</td><td class="n"><b>' + pct(q.volRate) + '</b></td></tr>')) +
+    '<p class="note">Rate = voluntary exits in the period ÷ average headcount, scaled to a full year (a quarter’s exits × 4). Average headcount is the mean of each month’s opening and closing headcount. FTEs only unless changed in the sidebar — contractor “contract end” and intern “end of internship” exits are excluded by default, which matters: interns are logged as voluntary. The termination log starts mid-Aug 2024, so Q3 2024 (September only) is left out; the latest quarter, if marked partial, covers only the months so far.</p></div>';
+  const c = themeColors(); const labels = Q.map(q => q.label + (q.partial ? "*" : ""));
+  const ds = [{label:orgName(), data:Q.map(q => q.volRate == null ? null : +(q.volRate*100).toFixed(2)), backgroundColor:Q.map(q => q.partial ? c.slate : c.teal), borderRadius:4}];
+  const cfg = {type:"bar", data:{labels, datasets:ds}, options:{plugins:{legend:{display:!!S.leader, labels:{generateLabels:() => [{text:orgName(), fillStyle:c.teal, strokeStyle:c.teal, lineWidth:0, datasetIndex:0},{text:"Whole company", fillStyle:"transparent", strokeStyle:c.amber, lineWidth:2, lineDash:[5,4], datasetIndex:1}]}}, tooltip:{callbacks:{label:i => i.dataset.label + ": " + i.formattedValue + "%"}}}, scales:{y:{beginAtZero:true, ticks:{callback:v => v + "%"}}}}};
+  if (S.leader) ds.push({type:"line", label:"Whole company", data:Qc.map(q => q.volRate == null ? null : +(q.volRate*100).toFixed(2)), borderColor:c.amber, backgroundColor:c.amber, borderDash:[5,4], pointRadius:3});
+  chart("c-q", cfg);
+  const RC = E.rolling12(E.monthly(company(), S.asof));
+  const ds2 = [{label:orgName(), data:R.map(r => +(r.volRate*100).toFixed(2)), borderColor:c.teal, backgroundColor:c.teal, tension:.25, pointRadius:2}];
+  if (S.leader) ds2.push({label:"Whole company", data:RC.map(r => +(r.volRate*100).toFixed(2)), borderColor:c.amber, backgroundColor:c.amber, borderDash:[5,4], pointRadius:0, tension:.25});
+  chart("c-t", {type:"line", data:{labels:R.map(r => mlabel(r.label)), datasets:ds2}, options:{plugins:{legend:{display:!!S.leader}, tooltip:{callbacks:{label:i => i.dataset.label + ": " + i.formattedValue + "%"}}}, scales:{y:{beginAtZero:true, ticks:{callback:v => v + "%"}}}}});
+}
+
+function pEarly(C){
+  const el = $("#p-early"); const Q = C.Q.filter((q,i) => !(i === 0 && q.partial)), R = C.R12, rN = R.length ? R[R.length-1] : null, rT = R.length ? R[0] : null;
+  const asof = S.asof, from = E.addMonths(E.monthStart(asof-1), -11), to = asof - 1;
+  const coQ = E.quarterly(E.monthly(company(), asof));
+  let cls = "", head = "", body = "";
+  if (rN) {
+    const mult = rN.ge1Rate ? rN.lt1Rate / rN.ge1Rate : null;
+    cls = (mult && mult > 1.3) ? "bad" : "mid";
+    head = (mult && mult > 1.3) ? "Yes — and it is getting worse." : (mult ? "Not clearly." : "Not enough data.");
+    body = "People in their first year are leaving voluntarily at " + pct(rN.lt1Rate) + " a year, versus " + pct(rN.ge1Rate) + " for everyone with a year or more of service" + (mult ? " — " + mult.toFixed(1) + "× higher" : "") + ". A year earlier the first-year rate was " + pct(rT.lt1Rate) + " (trailing 12 months to " + mlabel(rT.label) + ") while the rest sat at " + pct(rT.ge1Rate) + ".";
+  }
+  const coh = E.cohorts(C.L, asof);
+  const cell = (w) => { const [n, x] = w; return n === 0 ? '<span class="note">too new</span>' : (n < 8 ? '<span class="note">' + x + ' of ' + n + '</span>' : pct(x / n, 0) + ' <span class="note">(' + x + '/' + n + ')</span>'); };
+  const rs = E.exitReasons(C.L, from, to, true), rsAll = rs.reduce((a,b) => a + b.n, 0);
+  const share = k => { const r = rs.find(x => x.reason.includes(k)); return rsAll && r ? r.n / rsAll : 0; };
+  const softShare = share("Relocation") + share("Return to School"), compShare = share("Compensation");
+  const lt1pop = C.M.length ? C.M[C.M.length-1].avgLt1 : 0;
+  el.innerHTML = '<div class="answer ' + cls + '"><p class="big">' + head + '</p><p>' + body + '</p></div>' + (lt1pop < 40 ? smallWarn(lt1pop).replace("(about " + Math.round(lt1pop), "(about " + Math.round(lt1pop)) : "") +
+    '<div class="grid g2"><div class="card"><h3>Voluntary attrition by tenure (annualised, per quarter)</h3><div class="chartbox tall"><canvas id="c-e" role="img" aria-label="First-year versus longer-tenure attrition"></canvas></div><p class="note">“First year” = under 365 days of service at the time of exit. Quarters with a * are partial.</p></div>' +
+    '<div class="card"><h3>Of people hired in each quarter, % who quit within…</h3>' + tbl(["Hired in","Hires","90 days","6 months","12 months"], coh.map(c => '<tr><td>' + c.label + '</td><td class="n">' + c.hires + '</td><td class="n">' + cell(c.w[90]) + '</td><td class="n">' + cell(c.w[180]) + '</td><td class="n">' + cell(c.w[365]) + '</td></tr>')) +
+    '<p class="note">Only counts people who have been here long enough to be measured for that window. Hires before Sep 2024 are left out because people who left before the termination log began are missing from the data.</p></div></div>' +
+    '<div class="grid g2" style="margin-top:14px"><div class="card"><h3>Why first-year leavers said they left (last 12 months)</h3>' + (rsAll ? tbl(["Reason","Exits","Share"], rs.map(r => '<tr><td>' + esc(r.reason.replace("Resignation - ","")) + '</td><td class="n">' + r.n + '</td><td class="n">' + pct(r.n / rsAll, 0) + '</td></tr>')) : '<p class="note">No first-year voluntary exits in this window.</p>') +
+    '<p class="note">Reason codes are the log’s only “why”. ' + (rsAll ? 'Relocation and return-to-school make up ' + pct(softShare,0) + ' of first-year exits; compensation ' + pct(compShare,0) + '.' : '') + '</p></div>' +
+    '<div class="card"><h3>Where it is happening</h3>' + subOrgTable() + '</div></div>' +
+    '<div class="card" style="margin-top:14px"><h3>What I would do</h3><ol class="reco">' +
+    '<li><b>Go where it is concentrated, not everywhere.</b> Use the table above — orgs shaded red run at least 1.5× the company first-year rate. Sit down with that leader’s HRBP and read the last 20 first-year exits case by case — hiring source, manager, team, onboarding path.</li>' +
+    '<li><b>Catch the current hires before they go.</b> The newest hire cohorts are quitting sooner than earlier ones (see the 90-day column). Run 30/90/180-day check-ins for anyone hired since January and give managers a short list of who is inside the danger window.</li>' +
+    '<li><b>Don’t default to a pay fix.</b> In this data, early leavers’ base pay is within a couple of percent of peers at the same level, and “Compensation” is a minority reason (' + pct(compShare,0) + ' of first-year exits). Relocation and return-to-school are ' + pct(softShare,0) + ' — that points at who we hire (local candidates, expected-tenure screening, student-friendly schedules) and at career-path clarity, more than at pay.</li>' +
+    '<li><b>Fix the measurement.</b> Add exit-interview themes, hiring source and hiring manager to the termination data so the next version of this page can tell us <i>why</i>, not just <i>where</i>.</li></ol></div>';
+  bindDrill(el);
+  const c = themeColors();
+  const q1 = Q.filter(q => q.avgLt1 > 0);
+  const ds = [{label:"First year (under 1 yr service)", data:q1.map(q => q.lt1Rate == null ? null : +(q.lt1Rate*100).toFixed(2)), backgroundColor:c.brick, borderRadius:3},
+              {label:"Everyone else (1+ yr)", data:q1.map(q => q.ge1Rate == null ? null : +(q.ge1Rate*100).toFixed(2)), backgroundColor:c.teal, borderRadius:3}];
+  chart("c-e", {type:"bar", data:{labels:q1.map(q => q.label + (q.partial ? "*" : "")), datasets:ds}, options:{plugins:{tooltip:{callbacks:{label:i => i.dataset.label + ": " + i.formattedValue + "%"}}}, scales:{y:{beginAtZero:true, ticks:{callback:v => v + "%"}}}}});
+}
+
+/* ---------- Worth flagging: computed from the data at view time ---------- */
+function findings(){
+  const F = company(), yr0 = E.dn(E.toDate(S.asof-1).getUTCFullYear(),1,1);
+  const Fm = E.monthly(F, S.asof), Fq = E.quarterly(Fm), Fr = E.rolling12(Fm), rCo = Fr[Fr.length-1];
+  const out = [];
+  // 1 concentration
+  const vps = E.children(E.ceo.id).map(v => { const L = E.select({leader:v.id, includeLeader:true, wt:"F"}), ids = E.orgIds(v.id, true);
+    return {v, L, ids, r:E.ttmSummary(L, S.asof), rr:E.ttmSummary(F.filter(e => !ids.has(e.id)), S.asof), ytd:E.hcAt(L, S.asof) - E.hcAt(L, yr0-1)}; }).filter(x => x.r).sort((a,b) => b.r.lt1Rate - a.r.lt1Rate);
+  const top = vps[0];
+  if (top) {
+    const dirs = E.children(top.v.id).filter(d => (E.kids.get(d.id)||[]).length).map(d => E.ttmSummary(E.select({leader:d.id, includeLeader:true, wt:"F"}), S.asof)).filter(Boolean);
+    const above = dirs.filter(r => r.lt1Rate > rCo.lt1Rate).length;
+    const depts = [...new Set(top.L.map(e => e.dept))]; const dc = {}; top.L.forEach(e => dc[e.dept] = (dc[e.dept]||0)+1);
+    const topDepts = Object.entries(dc).sort((a,b) => b[1]-a[1]).slice(0,4).map(x => x[0]);
+    const shrinking = vps.filter(x => x.ytd < 0).map(x => x.v.name);
+    const restYtd = (E.hcAt(F, S.asof) - E.hcAt(F, yr0-1)) - top.ytd;
+    const rRest = E.rolling12(E.monthly(F.filter(e => !top.ids.has(e.id)), S.asof)), rrN = rRest[rRest.length-1], rrT = rRest[0];
+    out.push({t:"a", h:top.v.name + "’s org is where the attrition problem is concentrated", p:"Over the last 12 months its first-year voluntary attrition is " + pct(top.r.lt1Rate,0) + " (" + top.r.volLt1 + " exits) against " + pct(top.rr.lt1Rate,0) + " in the rest of the company, and its longer-tenured people leave at " + pct(top.r.ge1Rate,0) + " versus " + pct(top.rr.ge1Rate,0) + ". " + above + " of " + dirs.length + " director teams under " + top.v.name.split(" ")[0] + " are above the company first-year rate, so it is broad, not one bad pocket. Take this org out and company-wide voluntary attrition is " + pct(rrN.volRate) + " (" + pct(rrT.volRate) + " a year earlier) — almost flat. Headcount here is " + (top.ytd >= 0 ? "+" : "") + top.ytd + " this year while the rest of the company is " + (restYtd >= 0 ? "+" : "") + restYtd + (shrinking.length ? " (VP orgs that shrank: " + shrinking.join(", ") + ")" : "") + ". Biggest departments: " + topDepts.join(", ") + ". Note the rest of the company has its own first-year problem: " + pct(rrT.lt1Rate,0) + " → " + pct(rrN.lt1Rate,0) + " over the year."});
+  }
+  // 2 attrition
+  const q = Fq.filter(x => !x.partial), firstQ = q[0], lastQ = q[q.length-1], curQ = Fq[Fq.length-1];
+  const v = Fm.map(m => m.vol);
+  out.push({t:"a", h:"Voluntary attrition has climbed steadily, and the recent quarters are the worst", p:"Company-wide FTE voluntary attrition (annualised) was " + pct(firstQ.volRate) + " in " + firstQ.label + ", " + pct(lastQ.volRate) + " in " + lastQ.label + (curQ.partial ? ", and " + pct(curQ.volRate) + " so far in " + curQ.label : "") + ". Monthly voluntary exits ran " + Math.min(...v.slice(0,6)) + "–" + Math.max(...v.slice(0,6)) + " in the first six months of data and " + v.slice(-3).join(", ") + " in the last three. Attrition among people with 1+ year of service is up too (" + pct(firstQ.ge1Rate,1) + " in " + firstQ.label + " → " + pct(curQ.ge1Rate,1) + " in " + curQ.label + "), so this is not only a new-hire problem."});
+  // 3 growth
+  const l3 = Fm.slice(-3), ha = l3.reduce((a,m) => a + m.hires, 0)/3, ea = l3.reduce((a,m) => a + m.exits, 0)/3, lm = Fm[Fm.length-1];
+  const h24 = Fm.map(m => m.hires).slice(1);
+  out.push({t:"b", h:"Growth is running out of room", p:"Hiring has been flat at " + Math.min(...h24) + "–" + Math.max(...h24) + " FTEs a month for two years while exits climb. The last three months averaged " + ha.toFixed(0) + " hires against " + ea.toFixed(0) + " exits; " + mlabel(lm.label) + " is " + ((lm.end - lm.start) < 0 ? (Fm.slice(0,-1).every(m => m.end >= m.start) ? "the first month in the file where headcount fell" : "another month where headcount fell") : "up only " + (lm.end - lm.start)) + " (" + (lm.end - lm.start >= 0 ? "+" : "") + (lm.end - lm.start) + " net). At the current exit rate the company shrinks unless hiring steps up."});
+  // 4 interns
+  const iv = E.emps.filter(e => e.wt === "I" && e.tt === "V" && e.term != null); const im = {}; iv.forEach(e => { const k = E.iso(e.term).slice(0,7); im[k] = (im[k]||0)+1; });
+  const peaks = Object.entries(im).sort((a,b) => b[1]-a[1]).slice(0,2).sort();
+  out.push({t:"b", h:"Interns are logged as voluntary quits", p:"All " + iv.length + " “End of Internship” exits are coded Voluntary (" + peaks.map(([k,n]) => n + " in " + mlabel(k)).join(" and ") + "). Left in, they turn a normal ~12-exit month into a 50+ spike. Every rate on these pages is FTE-only for that reason; it is the easiest way to get attrition wrong."});
+  // 5 summary tab
+  const bad = PAYLOAD.recon.filter(r => r.vol_mine !== r.vol_summary);
+  out.push({t:"c", h:"The team’s monthly_summary tab is close, but not reliable", p:"Headcount and first-year counts tie to the source data once one duplicate person is removed, but " + (bad.length ? bad.map(r => mlabel(r.month_end.slice(0,7)) + " shows " + r.vol_summary + " voluntary exits where the termination log has " + r.vol_mine).join("; ") : "voluntary exits tie") + ". It looks hand-keyed. I rebuilt everything from the source tables — see Data & method."});
+  out.push({t:"c", h:"Four record-level problems that each move a headcount by one", p:"(1) “Rob Calloway” and “Robert Calloway” share email, birthday, department and location under two employee IDs; Rob has no pay record. (2) Jordan Beck resigned on 15 Jul 2026 but is still marked Active. (3) Three employees appear twice as identical rows. (4) One employee ID covers two employment stints (left 2024, rejoined 2025). One person, one ID, one status is the first thing to fix at source."});
+  const pc = E.pendingComp(S.asof, F); if (pc && pc.n) out.push({t:"c", h:"Pay changes dated in the future are already loaded", p:pc.n + " people have a pay change dated " + nice(E.fromISO(pc.date)) + " or later (all 4% base increases in this file; about " + usd(pc.usd) + " a year in total) — only " + pc.n + " of roughly 2,000 FTEs. It is either a partial load or a targeted cycle. I left them out of current pay; confirm with Total Rewards before Finance forecasts Q4 from this file."});
+  return out;
+}
+function pFind(){
+  const f = findings();
+  $("#p-find").innerHTML = '<div class="card"><p class="note" style="margin:0 0 6px">Company-wide, FTEs only, as of ' + nice(S.asof) + '. Numbers are computed from the same table as every other page. Red = act on it. Amber = watch it. Blue = data hygiene.</p>' +
+    f.map(x => '<div class="find"><div class="tag ' + x.t + '">' + ({a:"!",b:"~",c:"i"}[x.t]) + '</div><div><h3>' + esc(x.h) + '</h3><p>' + esc(x.p) + '</p></div></div>').join("") + '</div>';
+}
+function pData(){
+  const iss = PAYLOAD.issues, rc = PAYLOAD.recon;
+  $("#p-data").innerHTML = '<div class="card"><h2>Data issues found and how each was handled</h2><p class="note" style="margin:0 0 10px">These are the fixes applied before any number on the other pages is calculated.</p>' +
+    tbl(["#","Severity","Where","Issue","Rows","What I did"], iss.map(i => '<tr><td class="n">' + i.id + '</td><td><span class="pill ' + i.severity + '">' + i.severity + '</span></td><td>' + esc(i.sheet) + '</td><td style="min-width:260px">' + esc(i.issue) + '</td><td class="n">' + esc(i.rows) + '</td><td style="min-width:260px">' + esc(i.treatment) + '</td></tr>')) + '</div>' +
+    '<div class="card" style="margin-top:14px"><h2>Definitions used</h2><ol class="reco"><li><b>Org</b> = the leader plus everyone who reports to them directly or indirectly (all levels). Switch off “Count the leader” in the sidebar to exclude the leader.</li><li><b>Headcount</b> on a date = hired on/before and not terminated on/before that date. FTEs by default.</li><li><b>Voluntary attrition rate</b> = voluntary exits ÷ average headcount, annualised. Trailing-12-month version uses the last 12 full months.</li><li><b>First year</b> = under 365 days of service at the time of exit (or on the date for the headcount base). Matches how the monthly_summary tab counts it.</li><li><b>TCC</b> = annualised base + target bonus, in USD, latest record effective on or before the as-of date.</li><li><b>Termination date</b> is treated as the last day of employment: the person is not counted on that date.</li></ol></div>' +
+    '<div class="card" style="margin-top:14px"><h2>Reconciliation to the monthly_summary tab</h2>' + tbl(["Month end","FTE headcount (mine / summary)","Under-1yr (mine / summary)","Voluntary exits (mine / summary)"], rc.map(r => {
+      const bad = r.vol_mine !== r.vol_summary; const hb = r.hc_mine !== r.hc_summary || r.lt1_mine !== r.lt1_summary;
+      return '<tr><td>' + r.month_end + '</td><td class="n">' + r.hc_mine + ' / ' + r.hc_summary + '</td><td class="n">' + r.lt1_mine + ' / ' + r.lt1_summary + '</td><td class="n ' + (bad ? "down" : "") + '">' + r.vol_mine + ' / ' + r.vol_summary + '</td></tr>'; })) +
+    '<p class="note">“Mine” = rebuilt from employees + termination_log after cleaning. Only difference in headcount is the duplicate person the raw summary appears to have already removed; voluntary exits differ in March 2026.</p></div>' +
+    '<div class="card" style="margin-top:14px"><h2>Keeping this current</h2><p style="margin:0">This view is refreshed each month from the latest people data. The “Data as of” date in the sidebar shows what you are looking at; questions about a figure go to People Intelligence.</p></div>';
+}
+
+/* ---------- render ---------- */
+function render(){
+  kill();
+  const C = computeCore();
+  const e = S.leader ? E.byId.get(S.leader) : null;
+  $("#title").textContent = e ? e.name + "’s org" : "Whole company";
+  $("#lede").textContent = (S.leader ? "" : "Select a leader in the sidebar to explore their organisation. ") + (e ? e.level + ", " + e.dept + " · " : "") + fmt(E.hcAt(sel({wt:"A"}), S.asof)) + " people in total on " + nice(S.asof) + " (" + fmt(C.hcNow) + " " + WT[S.wt] + " shown).";
+  const ch = S.leader ? E.chain(S.leader) : [];
+  $("#crumbs").innerHTML = ch.length ? '<button data-id="">Whole company</button>' + ch.slice(0,-1).map(x => ' › <button data-id="' + x.id + '">' + esc(x.name) + '</button>').join("") + ' › <span>' + esc(ch[ch.length-1].name) + '</span>' : "";
+  $("#crumbs").querySelectorAll("button").forEach(b => b.onclick = () => setLeader(b.dataset.id ? +b.dataset.id : null));
+  $("#warn").innerHTML = S.wt !== "F" ? '<div class="warnbox">You are viewing ' + WT[S.wt] + '. The questions this page answers are about FTEs — switch back to “FTEs” for those figures. Interns’ “End of Internship” exits are coded voluntary, so attrition here overstates real resignations.</div>' : "";
+  [...$("#nav").children].forEach(b => b.setAttribute("aria-current", b.dataset.k === S.tab ? "page" : "false"));
+  document.querySelectorAll(".panel").forEach(p => p.hidden = p.id !== "p-" + S.tab);
+  ({overview:pOverview, headcount:pHeadcount, comp:pComp, attr:pAttr, early:pEarly, find:pFind, data:pData})[S.tab](C);
+  try { localStorage.setItem("pi_last_org", S.leader || ""); } catch(e){}
+}
+// start: whole company, default landing = Overview
+setLeader(null);
+if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => render());
+})();
+</script>
+</body>
+</html>

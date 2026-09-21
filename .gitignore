@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+node_modules/
+/payload.json
+/reference_answers.json
+/data_issues_log.csv
+/monthly_summary_reconciliation.csv
